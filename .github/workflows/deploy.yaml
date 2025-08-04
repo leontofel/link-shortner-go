@@ -14,17 +14,15 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Compress full project
-        run: tar --exclude='.git' --exclude='.github' -czf app.tar.gz .
-
       - name: Upload project to VPS via SCP
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
-          source: "app.tar.gz"
+          source: "./*"
           target: ${{ secrets.REMOTE_PATH }}
+          overwrite: true
 
       - name: Deploy on VPS
         uses: appleboy/ssh-action@v0.1.8
@@ -35,7 +33,6 @@ jobs:
           script: |
             set -eux
             cd ${{ secrets.REMOTE_PATH }}
-            tar -xzf app.tar.gz
             docker compose down
             docker compose build
             docker compose up -d
