@@ -27,7 +27,7 @@ jobs:
         
 
       - name: Compress project
-        run: tar -czf app.tar.gz link-shortener docker-compose.yml
+        run: tar -czf app.tar.gz link-shortener docker-compose.yml Dockerfile
 
       - name: Upload files to VPS
         uses: appleboy/scp-action@v0.1.4
