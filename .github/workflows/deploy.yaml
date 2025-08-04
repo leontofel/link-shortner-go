@@ -1,0 +1,54 @@
+name: Deploy Go App
+
+on:
+  push:
+    branches:
+      - main  # deployment branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      # (Optional) Build Go binary locally before upload
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24.x"
+
+      - name: Build Go app
+        run: |
+          cd backend
+          go mod tidy
+          go build -o link-shortener ./cmd/server
+          cd ..
+
+      - name: Compress project
+        run: tar -czf app.tar.gz backend docker-compose.yml
+
+      - name: Upload files to VPS
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          source: "app.tar.gz"
+          target: ${{ secrets.REMOTE_PATH }}
+
+      - name: Deploy on VPS
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          script: |
+            set -eux
+            cd ${{ secrets.REMOTE_PATH }}
+            tar -xzf app.tar.gz
+            docker compose down
+            docker compose build
+            docker compose up -d
