@@ -22,7 +22,6 @@ jobs:
 
       - name: Build Go app
         run: |
-          cd backend
           go mod tidy
           go build -o link-shortener ./cmd/server
           cd ..
