@@ -1,0 +1,7 @@
+
+*.log
+*.exe
+*.out
+vendor/
+.git/
+*.md
