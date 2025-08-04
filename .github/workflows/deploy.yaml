@@ -3,7 +3,7 @@ name: Deploy Go App
 on:
   push:
     branches:
-      - main  # deployment branch
+      - main
 
 jobs:
   build-and-deploy:
@@ -14,40 +14,28 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # (Optional) Build Go binary locally before upload
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: "1.24.x"
+      - name: Install sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
 
-      - name: Build Go app
+      - name: Upload backend source to VPS
         run: |
-          go mod tidy
-          go build -o link-shortener ./cmd/server
-        
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" rsync -avz \
+            --exclude '.git' \
+            ./backend/ \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/shortner-link/backend/
 
-      - name: Compress project
-        run: tar -czf app.tar.gz link-shortener docker-compose.yml Dockerfile
+      - name: Upload docker-compose.yml and Dockerfile to VPS
+        run: |
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp \
+            docker-compose.yml Dockerfile \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/shortner-link/backend/
 
-      - name: Upload files to VPS
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          source: "app.tar.gz"
-          target: ${{ secrets.REMOTE_PATH }}
-
-      - name: Deploy on VPS
-        uses: appleboy/ssh-action@v0.1.8
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          script: |
-            set -eux
-            cd ${{ secrets.REMOTE_PATH }}
-            tar -xzf app.tar.gz
-            docker compose down
-            docker compose build
-            docker compose up -d
+      - name: Build and restart app on VPS
+        run: |
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
+              cd /opt/shortner-link/backend && \
+              docker compose down && \
+              docker compose build && \
+              docker compose up -d
+            "

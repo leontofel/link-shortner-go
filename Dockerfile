@@ -1,19 +1,33 @@
 # syntax=docker/dockerfile:1
 
-FROM golang:1.24-alpine
+# ---------- Build stage ----------
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
-# Optional: Install git for go get if needed
+# Install git for go get (needed for private repos or some modules)
 RUN apk add --no-cache git
 
-COPY go.mod ./
-COPY go.sum ./
+# Cache go modules
+COPY go.mod go.sum ./
 RUN go mod download
 
+# Copy the source code
 COPY . .
 
-RUN go build -o link-shortener ./cmd/server
+# Build with optimizations for smaller binary
+RUN go build -o link-shortener -ldflags="-s -w" ./cmd/server
+
+# ---------- Run stage ----------
+FROM alpine:latest
+
+WORKDIR /app
+
+# Install CA certificates for HTTPS requests
+RUN apk --no-cache add ca-certificates
+
+# Copy only the binary from the builder stage
+COPY --from=builder /app/link-shortener .
 
 EXPOSE 8080
 
