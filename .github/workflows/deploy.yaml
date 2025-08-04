@@ -3,7 +3,7 @@ name: Deploy Go App
 on:
   push:
     branches:
-      - main  # deployment branch
+      - main
 
 jobs:
   build-and-deploy:
@@ -14,22 +14,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # (Optional) Build Go binary locally before upload
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: "1.24.x"
+      - name: Compress full project
+        run: tar -czf app.tar.gz . --exclude='.git' --exclude='.github'
 
-      - name: Build Go app
-        run: |
-          go mod tidy
-          go build -o link-shortener ./cmd/server
-        
-
-      - name: Compress project
-        run: tar -czf app.tar.gz link-shortener docker-compose.yml Dockerfile
-
-      - name: Upload files to VPS
+      - name: Upload project to VPS via SCP
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.SSH_HOST }}
