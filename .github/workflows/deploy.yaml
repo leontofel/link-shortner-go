@@ -24,10 +24,10 @@ jobs:
         run: |
           go mod tidy
           go build -o link-shortener ./cmd/server
-          cd ..
+        
 
       - name: Compress project
-        run: tar -czf app.tar.gz backend docker-compose.yml
+        run: tar -czf app.tar.gz link-shortener docker-compose.yml
 
       - name: Upload files to VPS
         uses: appleboy/scp-action@v0.1.4
