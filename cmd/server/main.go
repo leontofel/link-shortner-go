@@ -5,12 +5,18 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/joho/godotenv"
+	"github.com/leontofel/link-shortener/internal/handler"
 	"github.com/leontofel/link-shortener/internal/repository"
 	"github.com/leontofel/link-shortener/internal/service"
-	"github.com/leontofel/link-shortener/internal/handler"
 )
 
 func main() {
+	err := godotenv.Load()
+    if err != nil {
+        log.Println("⚠️ No .env file found, using system env vars")
+    }
+
 	ctx := context.Background()
 	repo := repository.NewRedisRepository(ctx, "redis:6379")
 	svc := service.NewShortenerService(repo)

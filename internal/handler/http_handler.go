@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/leontofel/link-shortener/internal/service"
@@ -31,7 +32,13 @@ func (h *HTTPHandler) ShortenURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := map[string]string{"short_url": "http://localhost:8080/" + code}
+
+    host := os.Getenv("LINK_CHECK_HOST")
+    if host == "" {
+        host = "8080"
+    }
+
+	resp := map[string]string{"short_url": host + ":8080/" + code}
 	json.NewEncoder(w).Encode(resp)
 }
 
