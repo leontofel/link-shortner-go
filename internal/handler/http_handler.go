@@ -35,10 +35,10 @@ func (h *HTTPHandler) ShortenURL(w http.ResponseWriter, r *http.Request) {
 
     host := os.Getenv("LINK_CHECK_HOST")
     if host == "" {
-        host = "8080"
+        host = "https://go-on.site/api/"
     }
 
-	resp := map[string]string{"short_url": host + ":8080/" + code}
+	resp := map[string]string{"short_url": host + code}
 	json.NewEncoder(w).Encode(resp)
 }
 
